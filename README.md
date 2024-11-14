@@ -1,7 +1,7 @@
 # CV_study
 for computer vision study 
 
-## Couse
+## Course
 1. Unet & AE
 2. VAE
 3. Diffusion
