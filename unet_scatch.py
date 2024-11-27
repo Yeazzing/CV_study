@@ -81,8 +81,8 @@ class UNet(nn.Module):
 if __name__ == '__main__':
     sample = torch.randn(4,3,256, 256) # B,C,H,W
     
-    encoder_channels = [(3, 64), (64, 128), (128, 256), (256, 512), (512, 1024)]
-    decoder_channels = [(2048, 1024), (1024, 512),(512, 256), (256, 128), (128, 64)]
+    encoder_channels = [(3, 64), (64, 128), (128, 256), (256, 512)]
+    decoder_channels = [(1024, 512), (512, 256), (256, 128), (128, 64)]
     
     model = UNet(encoder_channels, decoder_channels)
 
