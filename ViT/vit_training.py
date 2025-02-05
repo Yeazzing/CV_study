@@ -30,7 +30,7 @@ def main():
     args = parser.parse_args()
     
     transform_train=albumentations.Compose([
-            #albumentations.Normalize(),
+            #albumentations.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             albumentations.Resize(height = 224, width = 224),
             albumentations.pytorch.transforms.ToTensorV2()
             ])
@@ -80,21 +80,21 @@ def main():
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
-            wandb.log({"loss": loss}, step=step)
+            wandb.log({"train_loss": loss})
             
         
         model.eval()
         pred_list, label_list = [], []
-        for step, batch in enumerate(tqdm(val_dataloader)):
+        for val_step, batch in enumerate(tqdm(val_dataloader)):
             image = batch['image'].to(device)
             label = batch['label'].to(device)
             with torch.no_grad():
-                output = model.inference(image)
+                output = model(image)
             loss = loss_fn(output.logits, label)
             total_val_loss += loss.detach().float()
             
             logits = output.logits
-            pred = logits.argmax(-1)  ## model predicts one of the classes
+            pred = logits.argmax(-1)  #model predicts one of the classes
             
             pred = pred.to("cpu").numpy()
             label = label.to("cpu").numpy()
@@ -109,7 +109,7 @@ def main():
             
             score_step = accuracy.compute(predictions=pred, references=label)  #step단위
             
-            wandb.log({"loss": loss, "accuracy": score_step}, step=step)
+            wandb.log({"val_loss": loss, "accuracy": score_step['accuracy']})
             
         
         pred = np.concatenate(pred_list)
@@ -117,11 +117,13 @@ def main():
             
         score = accuracy.compute(predictions=pred, references=label)
             
-        if best_score < score:
-            target_path = str(args.save_path/ f'weight_{epoch}.pt')
+        if best_score < score['accuracy']:
+            now = datetime.now(pytz.timezone('Asia/Seoul')).strftime('%Y%m%d-%H:%M:%S')
+            Path(f"{args.save_path}/{now}").mkdir(parents=True, exist_ok=True)
+            target_path = Path(f"{args.save_path}/{now}/weight_{epoch}.pt")
             torch.save(model.state_dict(), target_path)
             torch.save(optimizer.state_dict(), target_path)
-            best_score = score
+            best_score = score['accuracy']
         
         print(f" Epoch ({epoch}), Best accuracy: {best_score}")   
     
